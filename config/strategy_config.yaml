@@ -1,0 +1,30 @@
+# 策略配置
+strategies:
+  - name: 'random'
+    type: 'random'
+    base_bid: 0.8
+    random_range: 0.5
+  
+  - name: 'fixed'
+    type: 'fixed'
+    base_bid: 0.8
+  
+  - name: 'ecpm'
+    type: 'ecpm'
+    base_bid: 0.8
+    max_bid: 4.0
+  
+  - name: 'conversion'
+    type: 'conversion'
+    base_bid: 1.0
+    target_roi: 1.5
+    max_bid: 4.0
+  
+  - name: 'roi_constraint'
+    type: 'roi_constraint'
+    base_bid: 1.0
+    roi_threshold: 1.8
+    value_per_conversion: 100.0
+    max_bid: 4.0
+
+revenue_per_conversion: 100.0

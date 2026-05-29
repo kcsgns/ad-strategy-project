@@ -1,0 +1,10 @@
+# 预算配置
+total_budget: 10000.0
+n_time_slots: 24
+
+pid_controller:
+  kp: 0.5
+  ki: 0.1
+  kd: 0.05
+
+budget_profile: 'daily'  # 'uniform' or 'daily'

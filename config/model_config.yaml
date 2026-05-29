@@ -1,0 +1,12 @@
+# 模型配置
+model_types:
+  - 'lr'
+  - 'deepfm'
+
+training:
+  test_size: 0.2
+  random_state: 42
+
+data:
+  n_samples: 20000
+  n_features: 20
