@@ -35,6 +35,7 @@
 1. **模型建设**
    - 实现了 LR 与轻量级神经网络 demo，用于 CTR/CVR 预估和策略接入
    - 使用 AUC、LogLoss 评估模型效果，并将预测分接入后续出价策略
+   - 新增 Avazu 真实 CTR 数据加载和训练脚本，可在公开广告点击数据上验证 CTR 模型
    - 预留 DeepCTR-Torch / DeepFM / xDeepFM 扩展接口
 
 2. **策略设计**

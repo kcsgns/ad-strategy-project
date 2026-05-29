@@ -140,6 +140,22 @@ ad-strategy-project/
 pip3 install -r requirements.txt
 ```
 
+### 使用真实 CTR 数据
+
+下载 Kaggle Avazu Click-Through Rate Prediction 数据集，并将 `train.csv` 放到：
+
+```text
+data/raw/avazu/train.csv
+```
+
+运行真实 CTR 数据实验：
+
+```bash
+python3 scripts/run_real_avazu.py --input data/raw/avazu/train.csv --nrows 100000
+```
+
+说明：Avazu 提供点击标签，但不包含转化和成交价字段；因此当前流程使用 Avazu 训练 CTR 模型，再接入项目内的拍卖仿真环境评估策略。
+
 ### 训练模型
 
 ```bash

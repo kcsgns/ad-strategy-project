@@ -35,6 +35,16 @@ python3 scripts/quick_start.py
 python3 scripts/main.py
 ```
 
+### 3. 使用 Avazu 真实 CTR 数据
+
+将 Kaggle Avazu `train.csv` 放到 `data/raw/avazu/train.csv`，然后运行：
+
+```bash
+python3 scripts/run_real_avazu.py --input data/raw/avazu/train.csv --nrows 100000
+```
+
+Avazu 只有点击标签，没有转化和成交价字段。本项目会用 Avazu 训练 CTR 模型，再把 CTR 分数接入现有拍卖仿真环境做策略对比。
+
 ## 项目文件说明
 
 ### 核心模块
