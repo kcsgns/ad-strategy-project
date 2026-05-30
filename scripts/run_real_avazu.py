@@ -56,7 +56,13 @@ def main():
     }
 
     print('\nRunning strategy simulation with real-data CTR model...')
-    env = AuctionEnvironment(n_competitors=3, auction_type='second_price', n_features=X.shape[1], random_state=42)
+    env = AuctionEnvironment(
+        n_competitors=3,
+        auction_type='second_price',
+        n_features=X.shape[1],
+        feature_names=X.columns.tolist(),
+        random_state=42,
+    )
     budget_manager = BudgetManager(total_budget=args.budget, n_time_slots=24)
     simulator = Simulator(
         environment=env,
