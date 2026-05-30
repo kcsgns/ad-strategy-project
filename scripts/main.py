@@ -14,6 +14,7 @@ import yaml
 import numpy as np
 
 from src.models.model_trainer import ModelTrainer, generate_synthetic_data
+from src.data import load_avazu_ctr_data
 from src.strategies import (
     RandomStrategy, FixedBidStrategy, ECPMStrategy,
     ConversionStrategy, ROIConstraintStrategy
@@ -32,7 +33,7 @@ def load_config(config_dir: str = 'config'):
     return configs
 
 
-def main():
+def main(use_avazu=False, avazu_path=None):
     print("="*60)
     print("Ad Strategy Project - Starting")
     print("="*60)
@@ -44,17 +45,35 @@ def main():
     print("\nLoading configurations...")
     configs = load_config()
     
-    # 1. 生成数据并训练模型
+    # 1. 加载数据并训练模型
     print("\n" + "="*60)
-    print("Step 1: Training CTR/CVR Models")
+    print("Step 1: Loading Data and Training CTR/CVR Models")
     print("="*60)
     
     model_config = configs['model_config']
-    X, y_click, y_conversion = generate_synthetic_data(
-        n_samples=model_config['data']['n_samples'],
-        n_features=model_config['data']['n_features'],
-        random_state=model_config['training']['random_state']
-    )
+    
+    # 判断使用真实数据还是模拟数据
+    if use_avazu and avazu_path and os.path.exists(avazu_path):
+        print(f"Loading real Avazu CTR data from: {avazu_path}")
+        X, y_click = load_avazu_ctr_data(avazu_path, nrows=model_config['data']['n_samples'])
+        # Avazu 没有转化标签，模拟生成转化数据
+        np.random.seed(model_config['training']['random_state'])
+        y_conversion = (y_click * np.random.rand(len(y_click)) > 0.7).astype(int)
+        print(f"Loaded {len(y_click)} samples from Avazu data")
+        print(f"Click rate: {y_click.mean():.4f}")
+        print(f"Conversion rate: {y_conversion.mean():.4f}")
+    else:
+        if use_avazu and not avazu_path:
+            print("Warning: Avazu path not provided, using synthetic data instead")
+        elif use_avazu and not os.path.exists(avazu_path):
+            print(f"Warning: Avazu file not found at {avazu_path}, using synthetic data instead")
+        
+        print("Generating synthetic data for training...")
+        X, y_click, y_conversion = generate_synthetic_data(
+            n_samples=model_config['data']['n_samples'],
+            n_features=model_config['data']['n_features'],
+            random_state=model_config['training']['random_state']
+        )
     
     trainer = ModelTrainer()
     results = trainer.train_and_compare(
@@ -156,4 +175,11 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    import argparse
+    parser = argparse.ArgumentParser(description='Ad Strategy Simulation')
+    parser.add_argument('--avazu', action='store_true', help='Use Avazu real CTR data')
+    parser.add_argument('--avazu-path', type=str, default='data/avazu/train.csv', 
+                        help='Path to Avazu train.csv')
+    args = parser.parse_args()
+    
+    main(use_avazu=args.avazu, avazu_path=args.avazu_path)
