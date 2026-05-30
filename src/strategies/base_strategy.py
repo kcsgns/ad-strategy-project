@@ -19,7 +19,8 @@ class BaseStrategy(ABC):
         self.history = []
     
     @abstractmethod
-    def calculate_bid(self, features: Dict[str, float], p_ctr: float, p_cvr: float = 0.0) -> float:
+    def calculate_bid(self, features: Dict[str, float], p_ctr: float, p_cvr: float = 0.0,
+                      bid_landscape=None) -> float:
         """计算竞价"""
         pass
     

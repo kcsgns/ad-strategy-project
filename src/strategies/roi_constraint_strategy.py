@@ -17,7 +17,8 @@ class ROIConstraintStrategy(BaseStrategy):
         self.min_expected_value = min_expected_value
         self.max_bid = max_bid
     
-    def calculate_bid(self, features: Dict[str, float], p_ctr: float, p_cvr: float = 0.0) -> float:
+    def calculate_bid(self, features: Dict[str, float], p_ctr: float, p_cvr: float = 0.0,
+                      bid_landscape=None) -> float:
         """
         ROI 约束竞价
         预期价值 = pCTR * pCVR * value_per_conversion

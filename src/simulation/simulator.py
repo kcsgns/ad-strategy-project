@@ -26,6 +26,7 @@ class Simulator:
         budget_manager: BudgetManager,
         ctr_predictor: CTRPredictor,
         cvr_predictor: CVRPredictor = None,
+        bid_landscape = None,
         n_auctions: int = 1000,
         revenue_per_conversion: float = 100.0
     ):
@@ -34,6 +35,7 @@ class Simulator:
         self.budget_manager = budget_manager
         self.ctr_predictor = ctr_predictor
         self.cvr_predictor = cvr_predictor
+        self.bid_landscape = bid_landscape
         self.n_auctions = n_auctions
         self.revenue_per_conversion = revenue_per_conversion
         
@@ -70,7 +72,7 @@ class Simulator:
                 
                 # 计算出价
                 pacing_factor = self.budget_manager.get_pacing_factor()
-                raw_bid = strategy.calculate_bid(opportunity.features, p_ctr, p_cvr)
+                raw_bid = strategy.calculate_bid(opportunity.features, p_ctr, p_cvr, self.bid_landscape)
                 final_bid = raw_bid * pacing_factor
                 
                 # 生成竞争对手出价
@@ -94,7 +96,11 @@ class Simulator:
                     'time_slot': time_slot,
                     'spent': self.budget_manager.total_spent,
                     'conversions': strategy.total_conversions,
-                    'bid': final_bid
+                    'bid': final_bid,
+                    'estimated_win_rate': (
+                        self.bid_landscape.estimate_win_rate(final_bid, p_ctr, p_cvr)
+                        if self.bid_landscape else np.nan
+                    )
                 })
                 
                 auction_count += 1

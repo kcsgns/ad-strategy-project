@@ -15,10 +15,10 @@ import pandas as pd
 from src.models.model_trainer import ModelTrainer, generate_synthetic_data
 from src.strategies import (
     RandomStrategy, FixedBidStrategy, ECPMStrategy,
-    ConversionStrategy, ROIConstraintStrategy
+    ConversionStrategy, ROIConstraintStrategy, LandscapeROIStrategy
 )
 from src.budget import BudgetManager
-from src.simulation import AuctionEnvironment, Simulator
+from src.simulation import AuctionEnvironment, BidLandscapeEstimator, Simulator
 from src.utils import Visualizer
 
 
@@ -44,13 +44,17 @@ def quick_start():
         'fixed': FixedBidStrategy('fixed', base_bid=0.8),
         'ecpm': ECPMStrategy('ecpm', base_bid=0.8, avg_ctr=float(y_click.mean()), max_bid=4.0),
         'conversion': ConversionStrategy('conversion', base_bid=1.0, value_per_conversion=100.0, target_roi=1.5, max_bid=4.0),
-        'roi_constraint': ROIConstraintStrategy('roi_constraint', base_bid=1.0, roi_threshold=1.8, value_per_conversion=100.0, max_bid=4.0)
+        'roi_constraint': ROIConstraintStrategy('roi_constraint', base_bid=1.0, roi_threshold=1.8, value_per_conversion=100.0, max_bid=4.0),
+        'landscape_roi': LandscapeROIStrategy('landscape_roi', base_bid=1.0, roi_threshold=1.8, value_per_conversion=100.0, max_bid=4.0)
     }
     print(f"   Strategies: {list(strategies.keys())}")
     
     # 3. 创建环境和预算
     budget_manager = BudgetManager(total_budget=5000.0, n_time_slots=24)
     env = AuctionEnvironment(n_competitors=3, auction_type='second_price', n_features=n_features, random_state=42)
+    landscape_env = AuctionEnvironment(n_competitors=3, auction_type='second_price', n_features=n_features, random_state=1042)
+    bid_landscape = BidLandscapeEstimator(n_bins=10).fit_from_environment(landscape_env, n_samples=20000)
+    print(f"   Bid landscape: {bid_landscape.summary()}")
     
     # 4. 运行模拟
     print("\n3. Running simulation...")
@@ -60,6 +64,7 @@ def quick_start():
         budget_manager=budget_manager,
         ctr_predictor=best_ctr_model,
         cvr_predictor=trainer.models.get(best_model_name.replace('ctr_', 'cvr_')),
+        bid_landscape=bid_landscape,
         n_auctions=3000,
         revenue_per_conversion=100.0
     )

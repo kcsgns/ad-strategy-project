@@ -4,6 +4,7 @@ from .random_strategy import RandomStrategy, FixedBidStrategy
 from .ecpm_strategy import ECPMStrategy
 from .conversion_strategy import ConversionStrategy
 from .roi_constraint_strategy import ROIConstraintStrategy
+from .landscape_roi_strategy import LandscapeROIStrategy
 
 __all__ = [
     'BaseStrategy',
@@ -11,5 +12,6 @@ __all__ = [
     'FixedBidStrategy',
     'ECPMStrategy',
     'ConversionStrategy',
-    'ROIConstraintStrategy'
+    'ROIConstraintStrategy',
+    'LandscapeROIStrategy'
 ]

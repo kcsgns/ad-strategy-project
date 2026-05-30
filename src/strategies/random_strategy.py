@@ -14,7 +14,8 @@ class RandomStrategy(BaseStrategy):
         super().__init__(name, base_bid)
         self.random_range = random_range
     
-    def calculate_bid(self, features: Dict[str, float], p_ctr: float, p_cvr: float = 0.0) -> float:
+    def calculate_bid(self, features: Dict[str, float], p_ctr: float, p_cvr: float = 0.0,
+                      bid_landscape=None) -> float:
         """随机出价"""
         return self.base_bid * (1 + np.random.uniform(-self.random_range, self.random_range))
 
@@ -25,6 +26,7 @@ class FixedBidStrategy(BaseStrategy):
     def __init__(self, name: str = 'fixed', base_bid: float = 1.0):
         super().__init__(name, base_bid)
     
-    def calculate_bid(self, features: Dict[str, float], p_ctr: float, p_cvr: float = 0.0) -> float:
+    def calculate_bid(self, features: Dict[str, float], p_ctr: float, p_cvr: float = 0.0,
+                      bid_landscape=None) -> float:
         """固定出价"""
         return self.base_bid

@@ -14,11 +14,12 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from src.budget import BudgetManager
 from src.data import load_avazu_ctr_data
 from src.models.model_trainer import ModelTrainer
-from src.simulation import AuctionEnvironment, Simulator
+from src.simulation import AuctionEnvironment, BidLandscapeEstimator, Simulator
 from src.strategies import (
     ConversionStrategy,
     ECPMStrategy,
     FixedBidStrategy,
+    LandscapeROIStrategy,
     ROIConstraintStrategy,
 )
 
@@ -53,9 +54,20 @@ def main():
         'ecpm': ECPMStrategy('ecpm', base_bid=0.8, avg_ctr=avg_ctr, max_bid=4.0),
         'conversion': ConversionStrategy('conversion', base_bid=1.0, value_per_conversion=100.0, target_roi=1.5, max_bid=4.0),
         'roi_constraint': ROIConstraintStrategy('roi_constraint', base_bid=1.0, roi_threshold=1.8, value_per_conversion=100.0, max_bid=4.0),
+        'landscape_roi': LandscapeROIStrategy('landscape_roi', base_bid=1.0, roi_threshold=1.8, value_per_conversion=100.0, max_bid=4.0),
     }
 
     print('\nRunning strategy simulation with real-data CTR model...')
+    landscape_env = AuctionEnvironment(
+        n_competitors=3,
+        auction_type='second_price',
+        n_features=X.shape[1],
+        feature_names=X.columns.tolist(),
+        random_state=1042,
+    )
+    bid_landscape = BidLandscapeEstimator(n_bins=10).fit_from_environment(landscape_env, n_samples=20000)
+    print(f'Bid landscape summary: {bid_landscape.summary()}')
+
     env = AuctionEnvironment(
         n_competitors=3,
         auction_type='second_price',
@@ -70,6 +82,7 @@ def main():
         budget_manager=budget_manager,
         ctr_predictor=best_ctr_model,
         cvr_predictor=None,
+        bid_landscape=bid_landscape,
         n_auctions=args.auctions,
         revenue_per_conversion=100.0,
     )

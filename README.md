@@ -21,6 +21,7 @@
 - pCTR 线性出价: `bid = base_bid * pCTR / avgCTR`
 - 转化价值出价: `bid = pCTR * pCVR * conversion_value / target_roi`
 - ROI 约束: 根据预期转化价值和 ROI threshold 控制最高出价
+- Bid landscape 感知 ROI: 估计 `P(market_price <= bid | traffic)`，在 ROI 约束内选择期望利润更高的出价
 
 ## 项目结构
 
@@ -160,6 +161,8 @@ python3 scripts/run_real_avazu.py --input data/raw/avazu/train.csv --nrows 10000
 python3 scripts/quick_start.py
 python3 scripts/main.py
 ```
+
+实验设计和最近一次结果见 [EXPERIMENTS.md](EXPERIMENTS.md)。
 
 ## 贡献指南
 

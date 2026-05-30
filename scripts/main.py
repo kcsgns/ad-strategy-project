@@ -17,10 +17,10 @@ from src.models.model_trainer import ModelTrainer, generate_synthetic_data
 from src.data import load_avazu_ctr_data
 from src.strategies import (
     RandomStrategy, FixedBidStrategy, ECPMStrategy,
-    ConversionStrategy, ROIConstraintStrategy
+    ConversionStrategy, ROIConstraintStrategy, LandscapeROIStrategy
 )
 from src.budget import BudgetManager
-from src.simulation import AuctionEnvironment, Simulator
+from src.simulation import AuctionEnvironment, BidLandscapeEstimator, Simulator
 from src.utils import Visualizer
 
 
@@ -115,6 +115,11 @@ def main(use_avazu=False, avazu_path=None):
         roi_threshold=1.8, value_per_conversion=strategy_config['revenue_per_conversion'],
         max_bid=4.0
     )
+    strategies['landscape_roi'] = LandscapeROIStrategy(
+        name='landscape_roi', base_bid=1.0,
+        roi_threshold=1.8, value_per_conversion=strategy_config['revenue_per_conversion'],
+        max_bid=4.0
+    )
     
     print(f"Created {len(strategies)} strategies: {list(strategies.keys())}")
     
@@ -135,6 +140,15 @@ def main(use_avazu=False, avazu_path=None):
         feature_names=feature_names,
         random_state=model_config['training']['random_state']
     )
+    landscape_env = AuctionEnvironment(
+        n_competitors=3,
+        auction_type='second_price',
+        n_features=len(feature_names) if feature_names else model_config['data']['n_features'],
+        feature_names=feature_names,
+        random_state=model_config['training']['random_state'] + 1000
+    )
+    bid_landscape = BidLandscapeEstimator(n_bins=10).fit_from_environment(landscape_env, n_samples=20000)
+    print(f"Bid landscape summary: {bid_landscape.summary()}")
     
     # 4. 运行模拟
     print("\n" + "="*60)
@@ -147,6 +161,7 @@ def main(use_avazu=False, avazu_path=None):
         budget_manager=budget_manager,
         ctr_predictor=best_ctr_model,
         cvr_predictor=trainer.models.get(f'cvr_{best_model_name.split("_")[1]}', None),
+        bid_landscape=bid_landscape,
         n_auctions=2000,
         revenue_per_conversion=strategy_config['revenue_per_conversion']
     )

@@ -16,7 +16,8 @@ class ECPMStrategy(BaseStrategy):
         self.avg_ctr = avg_ctr
         self.max_bid = max_bid
     
-    def calculate_bid(self, features: Dict[str, float], p_ctr: float, p_cvr: float = 0.0) -> float:
+    def calculate_bid(self, features: Dict[str, float], p_ctr: float, p_cvr: float = 0.0,
+                      bid_landscape=None) -> float:
         """线性 pCTR 出价，参考 RTB benchmark 常用的 bid = base_bid * pCTR / avgCTR。"""
         bid = self.base_bid * (p_ctr / max(self.avg_ctr, 1e-8))
         return max(0.0, min(self.max_bid, bid))
