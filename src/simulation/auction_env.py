@@ -33,11 +33,13 @@ class AuctionEnvironment:
         n_competitors: int = 3,
         auction_type: str = 'second_price',
         n_features: int = 10,
+        feature_names: List[str] = None,
         random_state: int = 42
     ):
         self.n_competitors = n_competitors
         self.auction_type = auction_type.lower()
         self.n_features = n_features
+        self.feature_names = feature_names or [f'feature_{i}' for i in range(n_features)]
         self.rng = np.random.default_rng(random_state)
         weight_rng = np.random.default_rng(random_state + 1009)
         self.ctr_weights = weight_rng.normal(0.0, 0.55, n_features)
@@ -48,7 +50,7 @@ class AuctionEnvironment:
         """生成广告机会"""
         n_features = n_features or self.n_features
         x = self.rng.normal(0.0, 1.0, n_features)
-        features = {f'feature_{i}': x[i] for i in range(n_features)}
+        features = {self.feature_names[i]: x[i] for i in range(n_features)}
 
         ctr_logit = -3.1 + x @ self.ctr_weights[:n_features] / np.sqrt(n_features)
         cvr_logit = -1.5 + x @ self.cvr_weights[:n_features] / np.sqrt(n_features)

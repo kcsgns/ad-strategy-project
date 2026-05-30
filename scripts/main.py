@@ -125,10 +125,14 @@ def main(use_avazu=False, avazu_path=None):
         n_time_slots=budget_config['n_time_slots']
     )
     
+    # 获取特征名称（用于匹配训练数据）
+    feature_names = X.columns.tolist() if hasattr(X, 'columns') else None
+    
     env = AuctionEnvironment(
         n_competitors=3,
         auction_type='second_price',
-        n_features=model_config['data']['n_features'],
+        n_features=len(feature_names) if feature_names else model_config['data']['n_features'],
+        feature_names=feature_names,
         random_state=model_config['training']['random_state']
     )
     
