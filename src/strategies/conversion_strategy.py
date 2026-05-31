@@ -20,8 +20,9 @@ class ConversionStrategy(BaseStrategy):
         self.max_bid = max_bid
     
     def calculate_bid(self, features: Dict[str, float], p_ctr: float, p_cvr: float = 0.0,
-                      bid_landscape=None) -> float:
+                      bid_landscape=None, opportunity=None) -> float:
         """按预期转化价值出价，target_roi 控制愿意支付的价值折扣。"""
-        expected_value = p_ctr * p_cvr * self.value_per_conversion
+        value = getattr(opportunity, 'conversion_value', self.value_per_conversion)
+        expected_value = p_ctr * p_cvr * value
         bid = self.base_bid * expected_value / max(self.target_roi, 1e-8)
         return max(0.0, min(self.max_bid, bid))

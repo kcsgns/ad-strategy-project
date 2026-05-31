@@ -93,6 +93,7 @@ ad-strategy-project/
 ### 4. 模拟环境
 - 自定义第二价格拍卖环境
 - 训练数据和在线流量使用同一套 CTR/CVR 生成机制，保证模型分数能影响策略结果
+- 支持用户价值分层、流量渠道、商品价格、GMV/LTV proxy 等电商营销要素
 - 支持固定随机种子，输出可复现实验结果
 
 ## 评估指标
@@ -160,6 +161,9 @@ python3 scripts/run_real_avazu.py --input data/raw/avazu/train.csv --nrows 10000
 ```bash
 python3 scripts/quick_start.py
 python3 scripts/main.py
+python3 scripts/run_channel_allocation.py
+python3 scripts/run_uplift_experiment.py
+python3 scripts/run_multi_seed_experiment.py
 ```
 
 实验设计和最近一次结果见 [EXPERIMENTS.md](EXPERIMENTS.md)。

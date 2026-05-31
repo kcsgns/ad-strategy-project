@@ -12,6 +12,11 @@ class AdOpportunity:
     features: Dict[str, float]
     true_ctr: float
     true_cvr: float
+    conversion_value: float
+    ltv_score: float
+    user_segment: str
+    traffic_channel: str
+    item_price: float
     floor_price: float = 0.1
 
 
@@ -27,6 +32,18 @@ class AuctionResult:
 
 class AuctionEnvironment:
     """拍卖环境"""
+    USER_SEGMENTS = {
+        'low_value': {'prob': 0.50, 'ctr': 0.90, 'cvr': 0.85, 'ltv': 0.70, 'price': 0.75},
+        'mid_value': {'prob': 0.35, 'ctr': 1.00, 'cvr': 1.00, 'ltv': 1.00, 'price': 1.00},
+        'high_value': {'prob': 0.15, 'ctr': 1.15, 'cvr': 1.30, 'ltv': 1.80, 'price': 1.45},
+    }
+    TRAFFIC_CHANNELS = {
+        'search': {'prob': 0.25, 'ctr': 1.20, 'cvr': 1.25, 'cost': 1.10},
+        'recommendation': {'prob': 0.35, 'ctr': 1.05, 'cvr': 1.00, 'cost': 1.00},
+        'short_video': {'prob': 0.20, 'ctr': 1.10, 'cvr': 0.90, 'cost': 1.05},
+        'live_commerce': {'prob': 0.12, 'ctr': 0.95, 'cvr': 1.35, 'cost': 1.25},
+        'shelf': {'prob': 0.08, 'ctr': 0.80, 'cvr': 0.75, 'cost': 0.80},
+    }
     
     def __init__(
         self,
@@ -45,23 +62,48 @@ class AuctionEnvironment:
         self.ctr_weights = weight_rng.normal(0.0, 0.55, n_features)
         self.cvr_weights = weight_rng.normal(0.0, 0.8, n_features)
         self.history = []
+
+    def _sample_segment(self) -> str:
+        names = list(self.USER_SEGMENTS.keys())
+        probs = [self.USER_SEGMENTS[name]['prob'] for name in names]
+        return str(self.rng.choice(names, p=probs))
+
+    def _sample_channel(self) -> str:
+        names = list(self.TRAFFIC_CHANNELS.keys())
+        probs = [self.TRAFFIC_CHANNELS[name]['prob'] for name in names]
+        return str(self.rng.choice(names, p=probs))
     
     def generate_opportunity(self, n_features: int = None) -> AdOpportunity:
         """生成广告机会"""
         n_features = n_features or self.n_features
         x = self.rng.normal(0.0, 1.0, n_features)
         features = {self.feature_names[i]: x[i] for i in range(n_features)}
+        user_segment = self._sample_segment()
+        traffic_channel = self._sample_channel()
+        segment_cfg = self.USER_SEGMENTS[user_segment]
+        channel_cfg = self.TRAFFIC_CHANNELS[traffic_channel]
 
         ctr_logit = -3.1 + x @ self.ctr_weights[:n_features] / np.sqrt(n_features)
         cvr_logit = -1.5 + x @ self.cvr_weights[:n_features] / np.sqrt(n_features)
-        true_ctr = 1.0 / (1.0 + np.exp(-ctr_logit))
-        true_cvr = 1.0 / (1.0 + np.exp(-cvr_logit))
-        floor_price = 0.05 + self.rng.gamma(shape=1.4, scale=0.08)
+        true_ctr = 1.0 / (1.0 + np.exp(-ctr_logit)) * segment_cfg['ctr'] * channel_cfg['ctr']
+        true_cvr = 1.0 / (1.0 + np.exp(-cvr_logit)) * segment_cfg['cvr'] * channel_cfg['cvr']
+        true_ctr = float(np.clip(true_ctr, 0.001, 0.95))
+        true_cvr = float(np.clip(true_cvr, 0.001, 0.95))
+        base_price = self.rng.lognormal(mean=np.log(80.0), sigma=0.45)
+        item_price = float(base_price * segment_cfg['price'])
+        ltv_score = float(item_price * segment_cfg['ltv'] * self.rng.lognormal(mean=0.0, sigma=0.2))
+        conversion_value = float(0.75 * item_price + 0.25 * ltv_score)
+        floor_price = (0.05 + self.rng.gamma(shape=1.4, scale=0.08)) * channel_cfg['cost']
         
         return AdOpportunity(
             features=features,
             true_ctr=true_ctr,
             true_cvr=true_cvr,
+            conversion_value=conversion_value,
+            ltv_score=ltv_score,
+            user_segment=user_segment,
+            traffic_channel=traffic_channel,
+            item_price=item_price,
             floor_price=floor_price
         )
     
@@ -69,7 +111,8 @@ class AuctionEnvironment:
         """生成竞争对手的出价"""
         # 竞争强度随流量质量增加，出价尺度保持在可解释的 CPM/CPA 仿真范围内。
         quality_value = opportunity.true_ctr * (1.0 + 4.0 * opportunity.true_cvr)
-        base_bid = 0.05 + quality_value * 5.0
+        channel_cost = self.TRAFFIC_CHANNELS.get(opportunity.traffic_channel, {}).get('cost', 1.0)
+        base_bid = (0.05 + quality_value * 5.0) * channel_cost
         competitor_bids = []
         
         for i in range(self.n_competitors):
@@ -137,6 +180,11 @@ class AuctionEnvironment:
             'cost': cost,
             'true_ctr': opportunity.true_ctr,
             'true_cvr': opportunity.true_cvr,
+            'conversion_value': opportunity.conversion_value,
+            'ltv_score': opportunity.ltv_score,
+            'user_segment': opportunity.user_segment,
+            'traffic_channel': opportunity.traffic_channel,
+            'item_price': opportunity.item_price,
             'clicked': clicked,
             'converted': converted
         })

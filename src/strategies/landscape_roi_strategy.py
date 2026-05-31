@@ -31,8 +31,9 @@ class LandscapeROIStrategy(BaseStrategy):
         self.min_win_rate = min_win_rate
 
     def calculate_bid(self, features: Dict[str, float], p_ctr: float, p_cvr: float = 0.0,
-                      bid_landscape=None) -> float:
-        expected_value = p_ctr * p_cvr * self.value_per_conversion
+                      bid_landscape=None, opportunity=None) -> float:
+        value = getattr(opportunity, 'conversion_value', self.value_per_conversion)
+        expected_value = p_ctr * p_cvr * value
         if expected_value < self.min_expected_value:
             return 0.0
 

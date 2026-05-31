@@ -72,7 +72,7 @@ class Simulator:
                 
                 # 计算出价
                 pacing_factor = self.budget_manager.get_pacing_factor()
-                raw_bid = strategy.calculate_bid(opportunity.features, p_ctr, p_cvr, self.bid_landscape)
+                raw_bid = strategy.calculate_bid(opportunity.features, p_ctr, p_cvr, self.bid_landscape, opportunity)
                 final_bid = raw_bid * pacing_factor
                 
                 # 生成竞争对手出价
@@ -86,9 +86,10 @@ class Simulator:
                 # 更新状态
                 if won and self.budget_manager.can_spend(cost):
                     self.budget_manager.spend(cost)
-                    strategy.update_state(won, cost, clicked, converted)
+                    revenue = opportunity.conversion_value if converted else 0.0
+                    strategy.update_state(won, cost, clicked, converted, revenue, opportunity)
                 else:
-                    strategy.update_state(False, 0.0, False, False)
+                    strategy.update_state(False, 0.0, False, False, 0.0, opportunity)
                 
                 # 记录时间序列数据
                 self.time_series[strategy_name].append({
@@ -96,7 +97,11 @@ class Simulator:
                     'time_slot': time_slot,
                     'spent': self.budget_manager.total_spent,
                     'conversions': strategy.total_conversions,
+                    'gmv': strategy.total_gmv,
                     'bid': final_bid,
+                    'traffic_channel': opportunity.traffic_channel,
+                    'user_segment': opportunity.user_segment,
+                    'conversion_value': opportunity.conversion_value,
                     'estimated_win_rate': (
                         self.bid_landscape.estimate_win_rate(final_bid, p_ctr, p_cvr)
                         if self.bid_landscape else np.nan
@@ -117,6 +122,7 @@ class Simulator:
             print(f"  Completed {auction_count} auctions")
             print(f"  Total spent: {self.budget_manager.total_spent:.2f}")
             print(f"  Conversions: {strategy.total_conversions}")
+            print(f"  GMV: {self.results[strategy_name]['gmv']:.2f}")
             print(f"  ROI: {self.results[strategy_name]['roi']:.2f}")
         
         return self.results
@@ -132,7 +138,7 @@ class Simulator:
         df = self.compare_strategies()
         
         # 选择关键指标
-        metrics = ['roi', 'total_conversions', 'total_spent', 'budget_utilization', 'ecpa']
+        metrics = ['roi', 'gmv', 'total_conversions', 'total_spent', 'budget_utilization', 'ecpa']
         fig, axes = plt.subplots(len(metrics), 1, figsize=(12, 4 * len(metrics)))
         
         for i, metric in enumerate(metrics):

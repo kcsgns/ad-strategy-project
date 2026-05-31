@@ -45,6 +45,16 @@ python3 scripts/run_real_avazu.py --input data/raw/avazu/train.csv --nrows 10000
 
 Avazu 只有点击标签，没有转化和成交价字段。本项目会用 Avazu 训练 CTR 模型，再把 CTR 分数接入现有拍卖仿真环境做策略对比。
 
+### 4. 运行电商营销扩展实验
+
+```bash
+python3 scripts/run_channel_allocation.py
+python3 scripts/run_uplift_experiment.py
+python3 scripts/run_multi_seed_experiment.py
+```
+
+这些脚本分别用于多场景预算分配、补贴 uplift 增量评估和多随机种子稳定性实验。
+
 ## 项目文件说明
 
 ### 核心模块

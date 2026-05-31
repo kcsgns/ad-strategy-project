@@ -10,7 +10,7 @@
 - `roi_constraint`: 用预期转化价值和 ROI threshold 限制最高出价。
 - `landscape_roi`: 在 ROI 约束基础上引入 bid landscape / win-rate 估计，选择期望利润更高的出价。
 
-实验重点不是只追求 AUC，而是验证模型分数如何影响最终业务指标：消耗、胜出数、点击、转化、ROI、eCPA 和预算利用率。
+实验重点不是只追求 AUC，而是验证模型分数如何影响最终业务指标：消耗、胜出数、点击、转化、GMV、ROI/ROAS、eCPA、LTV 价值和预算利用率。
 
 ## 2. 数据与仿真设置
 
@@ -35,6 +35,18 @@ python3 scripts/run_real_avazu.py --input data/avazu/train.csv --nrows 100000 --
 ```
 
 注意：Avazu 只有点击标签，没有真实转化标签、成交价、竞争者出价和预算消耗。因此当前 Avazu 流程是“真实 CTR 模型 + 仿真拍卖环境”，不能被表述为完整真实线上竞价回放。
+
+### 电商价值体系
+
+最新仿真环境不再使用固定转化价值，而是为每次广告机会生成：
+
+- `user_segment`: low/mid/high value 用户分层。
+- `traffic_channel`: search、recommendation、short_video、live_commerce、shelf。
+- `item_price`: 商品价格。
+- `ltv_score`: 用户长期价值 proxy。
+- `conversion_value`: 当次成交 GMV 与 LTV 的加权价值。
+
+因此策略指标同时包含 GMV、ROAS、AOV、高价值用户赢量占比等，更贴近电商智能营销场景。
 
 ## 3. Bid Landscape / Win-Rate 预估
 
@@ -98,6 +110,50 @@ expected_profit = win_rate(bid) * (expected_value - bid)
 - `landscape_roi` 在这个 smoke test 中没有胜出，主要因为 Avazu 的真实 CTR 特征和仿真的 CVR/市场价没有真实联合分布；换句话说，bid landscape 是仿真的，CTR 是真实数据训练出来的，两者只是在工程链路上接通，还不是严格的真实拍卖回放。
 - 这也是后续最值得增强的地方：使用带成交价的 RTB 数据集，例如 iPinYou，对 win-rate 和成本进行真实离线评估。
 
+### 多场景预算分配
+
+运行命令：
+
+```bash
+python3 scripts/run_channel_allocation.py
+```
+
+该实验比较四种预算分配方法：
+
+- `uniform`: 各场景平均分配。
+- `traffic`: 按流量规模分配。
+- `value`: 按单次曝光预期价值分配。
+- `roi`: 按预估 ROI 分配。
+
+它把项目从单一广告竞价扩展到多场景电商营销预算分配，对应搜索、推荐、短视频、直播和货架等不同流量入口。
+
+### 补贴 Uplift 实验
+
+运行命令：
+
+```bash
+python3 scripts/run_uplift_experiment.py
+```
+
+该实验比较：
+
+- `pcvr`: 给最可能购买的人发补贴。
+- `ltv`: 给长期价值最高的人发补贴。
+- `uplift`: 给最可能被补贴撬动的人发补贴。
+- `roi_uplift`: 按增量 GMV / 补贴成本排序。
+
+这个实验用于说明营销算法为什么不能只看 CVR，还要看“补贴是否真的带来增量”。
+
+### 多随机种子稳定性实验
+
+运行命令：
+
+```bash
+python3 scripts/run_multi_seed_experiment.py
+```
+
+该脚本会对核心策略跑 5 个随机种子，并输出 `results/multi_seed_summary.csv`，包含 ROI、GMV、eCPA、转化数、预算利用率和高价值用户占比的均值与标准差。
+
 ## 5. 结论
 
 当前项目已经能展示完整广告策略实验链路：
@@ -107,11 +163,15 @@ expected_profit = win_rate(bid) * (expected_value - bid)
 - 预算 pacing。
 - 第二价格拍卖模拟。
 - bid landscape / win-rate 预估。
-- ROI、eCPA、转化、消耗等业务指标评估。
+- GMV/LTV 用户价值体系。
+- 多场景预算分配。
+- 补贴 uplift 增量实验。
+- 多随机种子稳定性评估。
+- ROI、ROAS、eCPA、转化、消耗等业务指标评估。
 
 在简历或面试中，建议如实描述为：
 
-> 基于 Avazu CTR 数据和离线拍卖仿真的广告投放策略评估系统，支持 pCTR 出价、转化价值出价、ROI 约束出价和 bid landscape 感知出价，并从 ROI/eCPA/预算利用率等业务指标评估策略表现。
+> 基于 Avazu CTR 数据和离线拍卖仿真的电商智能营销策略评估系统，支持 pCTR 出价、转化价值出价、ROI 约束出价、bid landscape 感知出价、多场景预算分配与 uplift 补贴实验，并从 GMV/ROI/ROAS/eCPA/预算利用率等业务指标评估策略表现。
 
 不要表述为“完整复现线上广告系统”或“使用真实成交价完成投放回放”，因为当前缺少真实市场价和转化标签。
 
@@ -121,4 +181,4 @@ expected_profit = win_rate(bid) * (expected_value - bid)
 - 用真实 market price 训练 win-rate 模型，而不是只从仿真环境采样。
 - 将类别特征从 hash 数值改为 embedding 或 one-hot + 稀疏模型。
 - 将当前 `deepfm` demo 替换为真正的 DeepFM/xDeepFM/DIN。
-- 增加多随机种子实验，报告均值和置信区间，减少单次仿真的偶然性。
+- 将多随机种子结果进一步扩展为 95% 置信区间和显著性检验。

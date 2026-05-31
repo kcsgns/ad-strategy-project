@@ -18,13 +18,14 @@ class ROIConstraintStrategy(BaseStrategy):
         self.max_bid = max_bid
     
     def calculate_bid(self, features: Dict[str, float], p_ctr: float, p_cvr: float = 0.0,
-                      bid_landscape=None) -> float:
+                      bid_landscape=None, opportunity=None) -> float:
         """
         ROI 约束竞价
         预期价值 = pCTR * pCVR * value_per_conversion
         只有当预期价值 / bid >= roi_threshold 时才出价
         """
-        expected_value = p_ctr * p_cvr * self.value_per_conversion
+        value = getattr(opportunity, 'conversion_value', self.value_per_conversion)
+        expected_value = p_ctr * p_cvr * value
         if expected_value < self.min_expected_value:
             return 0.0
 
