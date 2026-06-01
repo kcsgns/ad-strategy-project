@@ -1,5 +1,9 @@
 # 实验报告
 
+项目名称：面向 ROI 约束的离线广告策略仿真与评估系统
+
+项目简介：基于公开 CTR 数据与离线拍卖仿真的广告策略评估项目，支持 pCTR 出价、ROI 约束竞价、预算 pacing 和 bid landscape 实验。
+
 ## 1. 实验目标
 
 本项目评估广告投放中的几类出价策略：
@@ -12,11 +16,21 @@
 
 实验重点不是只追求 AUC，而是验证模型分数如何影响最终业务指标：消耗、胜出数、点击、转化、GMV、ROI/ROAS、eCPA、LTV 价值和预算利用率。
 
+需要强调的是：本项目的核心价值在于“离线实验框架和策略比较”，而不是对真实广告投放日志做严格回放。
+
 ## 2. 数据与仿真设置
 
 ### Synthetic 实验
 
 Synthetic 数据用于端到端验证。训练数据和拍卖环境使用同一套 CTR/CVR 生成机制，因此 CTR/CVR 模型学到的模式可以迁移到仿真流量。
+
+这类实验适合验证：
+
+- 策略实现是否正确
+- 模型分数是否会通过出价逻辑影响业务指标
+- 预算控制、拍卖机制和指标统计链路是否闭环
+
+但它不能替代真实 RTB 日志上的离线 replay 评估。
 
 运行命令：
 
@@ -35,6 +49,12 @@ python3 scripts/run_real_avazu.py --input data/avazu/train.csv --nrows 100000 --
 ```
 
 注意：Avazu 只有点击标签，没有真实转化标签、成交价、竞争者出价和预算消耗。因此当前 Avazu 流程是“真实 CTR 模型 + 仿真拍卖环境”，不能被表述为完整真实线上竞价回放。
+
+更具体地说：
+
+- CTR 特征与点击标签来自真实公开数据
+- CVR、conversion value、market price、win-rate 估计来自项目内仿真环境
+- 因此该流程更适合说明“真实 CTR 数据训练与策略链路打通”，而不是说明“真实成本与 ROI 已被准确离线评估”
 
 ### 电商价值体系
 
@@ -72,6 +92,8 @@ expected_profit = win_rate(bid) * (expected_value - bid)
 
 这比单纯按预期价值出价更接近真实系统，因为它显式考虑了“出这个价能不能赢”。
 
+但这里的 bid landscape 仍然是仿真估计，不是基于真实 win notice / pay price 日志训练得到的生产级模型。
+
 ## 4. 实验结果
 
 ### Synthetic quick start
@@ -92,6 +114,8 @@ expected_profit = win_rate(bid) * (expected_value - bid)
 - `ecpm` 消耗最高但 ROI 较低，说明只按点击价值放量可能会买入过多高成本流量。
 - `roi_constraint` 比普通 `conversion` 更稳，因为它限制了单位预期价值愿意支付的最高价格。
 
+这些结论成立的前提是：训练分布与仿真分布存在一致性，因此更适合作为机制验证，不应直接外推为真实线上结论。
+
 ### Avazu real CTR experiment
 
 最近一次运行读取到本地 Avazu 文件中的 12330 行样本，执行 3000 次拍卖：
@@ -109,6 +133,8 @@ expected_profit = win_rate(bid) * (expected_value - bid)
 - Avazu 流程验证了真实 CTR 数据加载、训练、预测和策略仿真的可运行性。
 - `landscape_roi` 在这个 smoke test 中没有胜出，主要因为 Avazu 的真实 CTR 特征和仿真的 CVR/市场价没有真实联合分布；换句话说，bid landscape 是仿真的，CTR 是真实数据训练出来的，两者只是在工程链路上接通，还不是严格的真实拍卖回放。
 - 这也是后续最值得增强的地方：使用带成交价的 RTB 数据集，例如 iPinYou，对 win-rate 和成本进行真实离线评估。
+
+因此，这组结果更适合被描述为“工程 smoke test + 策略方向性观察”，不适合被描述为真实线上效果排序。
 
 ### 多场景预算分配
 
@@ -156,7 +182,7 @@ python3 scripts/run_multi_seed_experiment.py
 
 ## 5. 结论
 
-当前项目已经能展示完整广告策略实验链路：
+当前项目已经能展示较完整的离线广告策略实验链路：
 
 - 真实 CTR 数据训练。
 - 多种出价策略对比。
@@ -169,9 +195,15 @@ python3 scripts/run_multi_seed_experiment.py
 - 多随机种子稳定性评估。
 - ROI、ROAS、eCPA、转化、消耗等业务指标评估。
 
+但它的边界也要说清楚：
+
+- 不是线上广告投放系统
+- 不是基于真实成交价日志的严格 replay
+- 不是生产级 DeepFM / DIN 建模实现
+
 在简历或面试中，建议如实描述为：
 
-> 基于 Avazu CTR 数据和离线拍卖仿真的电商智能营销策略评估系统，支持 pCTR 出价、转化价值出价、ROI 约束出价、bid landscape 感知出价、多场景预算分配与 uplift 补贴实验，并从 GMV/ROI/ROAS/eCPA/预算利用率等业务指标评估策略表现。
+> 基于公开 CTR 数据与离线拍卖仿真的广告策略评估项目，支持 pCTR 出价、转化价值出价、ROI 约束出价、bid landscape 感知出价、多场景预算分配与 uplift 补贴实验，并从 GMV/ROI/ROAS/eCPA/预算利用率等业务指标评估策略表现。
 
 不要表述为“完整复现线上广告系统”或“使用真实成交价完成投放回放”，因为当前缺少真实市场价和转化标签。
 

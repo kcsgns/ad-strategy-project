@@ -2,14 +2,14 @@
 
 ## 项目概述
 
-这是一个面向 ROI 约束的广告投放排序与预算控制系统，非常适合作为从后端转搜广推算法/策略算法的简历项目。
+这是一个面向 ROI 约束的离线广告策略仿真项目，适合作为从后端转搜广推算法/策略算法方向的简历项目。
 
 ### 为什么这个项目适合简历？
 
 1. **技术栈完整**
    - 机器学习建模（CTR/CVR 预估）
    - 控制理论（PID 控制）
-   - 强化学习/bandit 策略
+   - 拍卖仿真与策略评估
    - Python 工程化实现
 
 2. **业务场景真实**
@@ -25,18 +25,18 @@
 ## 简历要点
 
 ### 项目名称
-面向 ROI 约束的广告投放排序与预算控制系统
+面向 ROI 约束的离线广告策略仿真与评估系统
 
 ### 项目描述
-构建了一个端到端的广告投放策略仿真系统，实现了 CTR/CVR 预估、多策略竞价、预算 pacing 控制和第二价格拍卖模拟。通过可复现实验对比不同策略在消耗、转化、ROI、eCPA、预算利用率等指标上的表现。
+基于公开 CTR 数据与离线拍卖仿真，构建广告策略评估项目，实现了 CTR/CVR 预估 demo、多策略竞价、预算 pacing 控制和第二价格拍卖模拟。通过可复现实验对比不同策略在消耗、转化、ROI、eCPA、预算利用率等指标上的表现。
 
 ### 核心工作
 
 1. **模型建设**
    - 实现了 LR 与轻量级神经网络 demo，用于 CTR/CVR 预估和策略接入
    - 使用 AUC、LogLoss 评估模型效果，并将预测分接入后续出价策略
-   - 新增 Avazu 真实 CTR 数据加载和训练脚本，可在公开广告点击数据上验证 CTR 模型
-   - 预留 DeepCTR-Torch / DeepFM / xDeepFM 扩展接口
+   - 新增 Avazu 真实 CTR 数据加载和训练脚本，可在公开广告点击数据上验证 CTR 模型训练链路
+   - 预留 DeepCTR-Torch / DeepFM / xDeepFM 扩展接口，但当前仓库未实现生产级 DeepFM/DIN
 
 2. **策略设计**
    - 设计了 eCPM、转化目标、ROI 约束等多种竞价策略
@@ -59,7 +59,7 @@
 
 ### 技术关键词
 
-- 机器学习：CTR 预估、CVR 预估、DeepFM
+- 机器学习：CTR 预估、CVR 预估、Logistic Regression
 - 广告算法：eCPM、竞价策略、预算 pacing、PID 控制
 - 平台/框架：Python、NumPy、pandas、scikit-learn、matplotlib
 - 评估指标：AUC、LogLoss、ROI、eCPA、预算利用率
@@ -87,7 +87,7 @@
 ### 可能的问题
 
 1. **CTR/CVR 模型**
-   - 为什么选择 DeepFM？相比 LR 有什么优势？
+   - 为什么当前先用 LR 和轻量级神经网络 demo？如果升级到 DeepFM 会带来什么收益？
    - 特征工程怎么做的？
    - 如何处理类别特征？
 
@@ -113,7 +113,7 @@
 
 ### 短期优化
 1. 集成真实的 DeepCTR-Torch 库
-2. 使用真实数据集（iPinYou 或 Avazu）
+2. 使用包含成交价的真实 RTB 数据集（如 iPinYou）
 3. 引入 bid landscape / win-rate 预估，优化第一价格拍卖下的 bid shading
 4. 实现更多策略（bandit、强化学习 bidding）
 
@@ -131,6 +131,13 @@ pip install -r requirements.txt
 python scripts/quick_start.py
 ```
 
+## 简历和面试口径建议
+
+- 建议表述为“离线广告策略仿真/评估项目”，不要表述为“线上广告系统”
+- 可以说“接入了 Avazu 真实 CTR 数据做训练”，但不要说“完成了真实投放回放”
+- 可以说“预留了 DeepFM 等扩展接口”，但不要说“已经实现了工业级 DeepFM”
+- 最稳妥的卖点是：业务理解、实验设计、模块化工程抽象、以及模型到策略的闭环
+
 ## 项目结构参考
 
 ```
@@ -145,9 +152,10 @@ ad-strategy-project/
 │   ├── budget/             # 预算模块
 │   ├── pacing/             # Pacing 模块
 │   ├── simulation/         # 模拟环境
+│   ├── allocation/         # 多场景预算分配
+│   ├── uplift/             # 补贴 uplift 实验
 │   └── utils/              # 工具模块
-├── notebooks/              # Notebooks
 ├── scripts/                # 脚本
 ├── data/                   # 数据
-└── results/                # 结果
+└── results/                # 运行后生成的结果目录
 ```
